@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
 from db.tables import User
+from libs.auth import hash_password, verify_password
 
 router = APIRouter(
   prefix="/users",
@@ -22,7 +23,7 @@ async def create_user(body: CreateUserBody):
   await User(
     {
       User.username: body.username,
-      User.hashed_password: User.hash_password(body.password),
+      User.hashed_password: hash_password(body.password),
     }
   ).save()
 
@@ -39,7 +40,7 @@ async def create_token(body: CreateTokenBody):
   if not user:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-  verified = user.verify_password(body.password, user.hashed_password)
+  verified = verify_password(body.password, user.hashed_password)
 
   if not verified:
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
